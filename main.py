@@ -53,15 +53,19 @@ def init_database():
 
 	return connection
 
+def print_output(ouput):
+	for i in ouput:
+		print(i)
+
 def main():
 	connection = init_database()
 
-	screen_width = 1200
+	screen_width = 1600
 	screen_height = 900
 	init_window(screen_width, screen_height, "Home Library")
 	set_target_fps(60)
 
-	controlX = screen_width / 2 + 100
+	controlX = screen_width / 2 + 300
 
 	authorInputBox = InputBox(controlX + 200, 60, 260, 30)
 	bookInputBox = InputBox(controlX + 200, 100, 260, 30)
@@ -80,6 +84,8 @@ def main():
 	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, 700, 30, 30)
 
 	duplicatesButton = Button("Print", controlX + 300, 840, 60, 30, SKYBLUE)
+
+	resultViewer = ResultViewer()
 
 	currentInputBox = authorInputBox
 
@@ -128,10 +134,16 @@ def main():
 
 		clear_background(RAYWHITE)
 
+		#=======================================
+		# Result viewer
+		resultViewer.draw(controlX - 1)
+		#=======================================
+		
+
 		# Control panel
 		draw_rectangle(controlX, 0, screen_width / 2, screen_height, LIGHTGRAY)
 		draw_line(controlX, 0, controlX, screen_height, DARKGRAY)
-		
+
 		# ======================================
 		# Book search by author or name controls
 		BackgroundBox.draw(controlX, 45, screen_width, 135, GRAY)
@@ -146,22 +158,23 @@ def main():
 
 		searchBookAuthorButton.draw()
 		if(searchBookAuthorButton.isClicked()):
-			print("[QUERY] Author or name search")
 			cur = connection.cursor()
 			if (authorInputBox.inputText and bookInputBox.inputText):
-				print(authorInputBox.inputText)
 				print(bookInputBox.inputText)
-				cur.execute(""" SELECT * FROM books WHERE (books.book_name = ? AND books.author_name = ?) """, (bookInputBox.inputText, authorInputBox.inputText))
-				print(cur.fetchall())
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+								FROM books WHERE (books.book_name = ? AND books.author_name = ?) """, (bookInputBox.inputText, authorInputBox.inputText))
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
+				resultViewer.results= cur.fetchall()
 			elif (authorInputBox.inputText):
-				print(authorInputBox.inputText)
-				cur.execute(""" SELECT * FROM booksWHERE books.author_name = ? """, (authorInputBox.inputText, ))
-				print(cur.fetchall())
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+								FROM books WHERE books.author_name = ? """, (authorInputBox.inputText, ))
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
+				resultViewer.results = cur.fetchall()
 			elif (bookInputBox.inputText):
-				print(bookInputBox.inputText)
-				cur.execute(""" SELECT * FROM books WHERE books.book_name = ? """, (bookInputBox.inputText, ))
-				print(cur.fetchall())
-		
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+								FROM books WHERE books.book_name = ? """, (bookInputBox.inputText, ))
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
+				resultViewer.results = cur.fetchall()
 
 		Splitter.draw(controlX, 180)
 		#=======================================
@@ -179,7 +192,8 @@ def main():
 		if (searchStoryButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
-			print(cur.fetchall())
+			resultViewer.header = ["Story name", "Book name", "Author name", "Genre"]
+			resultViewer.results = cur.fetchall()
 		Splitter.draw(controlX, 320)
 		#=======================================
 		
@@ -192,10 +206,10 @@ def main():
 		authorStorySearchInputBox.draw()
 		authorStorySearchButton.draw()
 		if (authorStorySearchButton.isClicked()):
-			print("Search stories - ", authorStorySearchInputBox.inputText)
 			cur = connection.cursor()
 			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
-			print(cur.fetchall())
+			resultViewer.header = ["Story name", "Book name", "Author name", "Genre"]
+			resultViewer.results = cur.fetchall()
 
 		Splitter.draw(controlX, 600)
 		#=======================================
@@ -211,10 +225,10 @@ def main():
 		genrePickButton.draw()
 		# I need to print book by genre depenging on which novels are in it
 		if (genrePickButton.isClicked()):
-			print("Books by genre - ")
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, author_name, story_name, genre FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
-			print(cur.fetchall())
+			resultViewer.header = ["Book name", "Author name", "Story name", "Genre"]
+			resultViewer.results = cur.fetchall()
 
 		#=======================================
 
@@ -226,13 +240,12 @@ def main():
 		duplicatesButton.draw()	
 		draw_text("Print duplicates", controlX + 20, 840, 30, DARKGRAY)
 		if (duplicatesButton.isClicked()):
-			print("Print duplicates")
 			cur = connection.cursor()
-			cur.execute(""" SELECT * FROM books
+			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, story_name, genre FROM books
 							NATURAL JOIN
 							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1))""")
-			for pr in cur.fetchall():
-				print(pr)			
+			resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Story name", "Genre"]
+			resultViewer.results = cur.fetchall()
 		#=======================================
 
 		#=======================================
@@ -249,21 +262,19 @@ def main():
 		authorNovelCountInputCheckBox.draw()
 		authorNovelCountDropDownCheckBox.draw()
 		if (authorNovelCountButton.isClicked()):
-			print("Count novels - ", authorNovelCountDropDown.currentVariant, authorNovelCountInputBox.inputText)
 			cur = connection.cursor()
 			if (authorNovelCountDropDownCheckBox.checked and authorNovelCountInputCheckBox.checked):
-				print("Dropdown and Input")
 				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ? and stories.genre = ?""", 
 					(authorNovelCountInputBox.inputText, authorNovelCountDropDown.currentVariant))
-				print(cur.fetchall())
+				resultViewer.header = [f"Number of {authorNovelCountDropDown.currentVariant} novels by {authorNovelCountInputBox.inputText} "]
 			elif (authorNovelCountDropDownCheckBox.checked):
-				print("Dropdown")
 				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE stories.genre = ? """, (authorNovelCountDropDown.currentVariant,))
-				print(cur.fetchall())
+				resultViewer.header = [f"Number of {authorNovelCountDropDown.currentVariant} novels"]
 			elif (authorNovelCountInputCheckBox.checked):
-				print("Input")
 				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorNovelCountInputBox.inputText, ))
-				print(cur.fetchall())
+				resultViewer.header = [f"Number of novels by {authorNovelCountInputBox.inputText}"]
+
+			resultViewer.results = cur.fetchall()
 
 		#=======================================
 

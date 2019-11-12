@@ -47,6 +47,56 @@ class CheckBox:
 			new_rect = Rectangle(self.rect.x + 5, self.rect.y + 5, self.rect.width - 10, self.rect.height - 10)
 			draw_rectangle_rec(new_rect, DARKBLUE)
 
+class ResultViewer:
+	def __init__(self):
+		self.page = 1
+		self.results = []
+		self.header = ""
+
+	def draw(self, width):
+		draw_rectangle(0, 0, width, 50, GRAY)
+
+		if (not self.results):
+			draw_text("Nothing to display here...", 225, 400, 50, DARKBLUE)
+			return
+
+		ColorEven = LIGHTGRAY
+		ColorOdd = RAYWHITE
+		# Swap color to end with the gray color
+		if (len(self.results) % 2 == 0):
+			ColorEven, ColorOdd = ColorOdd, ColorEven
+		# First draw row's background
+		for index in range(len(self.results)):
+			if (index % 2 == 0):
+				draw_rectangle(0, 50 * (index + 1), width, 50, ColorEven)
+			else:
+				draw_rectangle(0, 50 * (index + 1), width, 50, ColorOdd)
+
+		prevColWidth = 0
+		for column in range(0, len(self.header)):
+			# Determine max length in a column
+			magicAligningConstant = 20
+			columnWidth = measure_text(self.header[column], 30) + magicAligningConstant
+			for result in self.results:
+				length = measure_text(str(result[column]), 30) + magicAligningConstant
+				if (columnWidth < length):
+					columnWidth = length
+
+			columnHeight = 50
+			leftPadding = 10
+			topPadding = 10
+			draw_text(str(self.header[column]), leftPadding + prevColWidth, topPadding, 30, DARKBLUE)  
+			for index, result in enumerate(self.results, start = 1):
+				draw_text(str(result[column]), leftPadding + prevColWidth, topPadding + columnHeight * index, 30, DARKBLUE)
+			if (column != len(self.header) - 1):
+				draw_rectangle(prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1), DARKGRAY)
+			prevColWidth += columnWidth
+
+		Splitter.draw(0, 10)
+
+	def set(self, new_results):
+		self.results = new_results
+
 class DropDown:
 	def __init__(self, posX, posY, width, height, variants = []):
 		self.rect = Rectangle(posX, posY, width, height)
