@@ -241,10 +241,9 @@ def main():
 			cur = connection.cursor()
 			cur.execute("""
 				SELECT author_name, story_name, book_name, genre FROM
-				(SELECT story_name AS sn, book_name, author_name FROM stories INNER JOIN books AS b on stories.id = b.id AND b.author_name = ?)
-				INNER JOIN
-				(SELECT story_name, genre FROM stories INNER JOIN book_to_genre as b on stories.id = b.id)
-				ON sn = story_name
+				(SELECT * FROM stories NATURAL JOIN books WHERE books.author_name = ?)
+				NATURAL JOIN
+				(SELECT * from stories NATURAL JOIN book_to_genre)
 				""", (authorStorySearchInputBox.inputText, ))
 			print(cur.fetchall())
 
