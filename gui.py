@@ -28,6 +28,25 @@ class Button:
 		draw_rectangle_lines_ex(self.button, 2, DARKGRAY)
 		draw_text(self.text, self.button.x + 5, self.button.y + 5, 20, SKYBLUE)
 
+class CheckBox:
+	def __init__(self, posX, posY, width, height):
+		self.rect = Rectangle(posX, posY, width, height)
+		self.checked = True
+
+	def isClicked(self):
+		if (check_collision_point_rec(get_mouse_position(), self.rect)):
+			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
+				self.checked = not self.checked
+
+	def draw(self):
+		self.isClicked()
+		draw_rectangle_rec(self.rect, LIGHTGRAY)
+		draw_rectangle_lines_ex(self.rect, 2, DARKBLUE)
+
+		if (self.checked):
+			new_rect = Rectangle(self.rect.x + 5, self.rect.y + 5, self.rect.width - 10, self.rect.height - 10)
+			draw_rectangle_rec(new_rect, DARKBLUE)
+
 class DropDown:
 	def __init__(self, posX, posY, width, height, variants = []):
 		self.rect = Rectangle(posX, posY, width, height)

@@ -21,7 +21,7 @@ def create_table(connection, sql_query):
 		print(e)
 
 def insert_book(connection, book):
-	query = ''' INSERT INTO books(id, book_name, author_name, pub_date, pub_plc) 
+	query = ''' INSERT INTO books(book_id, book_name, author_name, pub_date, pub_plc) 
 				VALUES(?, ?, ?, ?, ?) '''
 
 	cur = connection.cursor()
@@ -32,64 +32,22 @@ def insert_book(connection, book):
 
 
 def init_database():
-	connection = create_connection("c:/dev/database/library.db")
+	connection = create_connection("c:/dev/clientappdatabase/library.db")
 
 	with connection:
 		create_table(connection, """
 				CREATE TABLE IF NOT EXISTS books (
-					id integer PRIMARY KEY,
+					book_id integer PRIMARY KEY,
 					book_name text NOT NULL,
 					author_name text NOT NULL,
 					pub_date text NOT NULL,
-					pub_plc text NOT NULL,
-
-					FOREIGN KEY (id)
-						REFERENCES book_name_to_id(id)
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS sci_fi (
-					id integer PRIMARY KEY
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS detectives (
-					id integer PRIMARY KEY
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS adventures (
-					id integer PRIMARY KEY
+					pub_plc text NOT NULL
 				)""")
 
 		create_table(connection, """
 				CREATE TABLE IF NOT EXISTS stories (
-					id integer NOT NULL,
-					story_name text NOT NULL
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS book_name_to_id(
-					book_name text NOT NULL,
-					id integer PRIMARY KEY
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS author_name_to_id(
-					author_name text NOT NULL,
-					id integer NOT NULL
-				)""")
-
-		create_table(connection, """ 
-				CREATE TABLE IF NOT EXISTS story_name_to_id(
+					book_id integer NOT NULL,
 					story_name text NOT NULL,
-					id integer NOT NULL
-				)""")
-
-
-		create_table(connection, """
-				CREATE TABLE IF NOT EXISTS book_to_genre(
-					id integer NOT NULL,
 					genre text NOT NULL
 				)""")
 
@@ -114,9 +72,13 @@ def main():
 	genrePickButton = Button("Search", controlX + 20, 420, 85, 30, SKYBLUE)
 	authorStorySearchInputBox = InputBox(controlX + 200, 520, 260, 30)
 	authorStorySearchButton = Button("Search", controlX + 20, 560, 85, 30, SKYBLUE)
+	
 	authorNovelCountInputBox = InputBox(controlX + 200, 660, 260, 30)
 	authorNovelCountDropDown = DropDown(controlX + 200, 700, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
 	authorNovelCountButton = Button("Count", controlX + 20, 740, 70, 30, SKYBLUE)
+	authorNovelCountInputCheckBox = CheckBox(controlX + 150, 660, 30, 30)
+	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, 700, 30, 30)
+
 	duplicatesButton = Button("Print", controlX + 300, 840, 60, 30, SKYBLUE)
 
 	currentInputBox = authorInputBox
@@ -189,22 +151,15 @@ def main():
 			if (authorInputBox.inputText and bookInputBox.inputText):
 				print(authorInputBox.inputText)
 				print(bookInputBox.inputText)
-				cur.execute(""" SELECT * 
-								FROM books 
-								WHERE (books.book_name = ? AND books.author_name = ?)""", 
-								(bookInputBox.inputText, authorInputBox.inputText))
+				cur.execute(""" SELECT * FROM books WHERE (books.book_name = ? AND books.author_name = ?) """, (bookInputBox.inputText, authorInputBox.inputText))
 				print(cur.fetchall())
 			elif (authorInputBox.inputText):
 				print(authorInputBox.inputText)
-				cur.execute(""" SELECT * FROM books
-								WHERE books.author_name = ?
-								""", (authorInputBox.inputText, ))
+				cur.execute(""" SELECT * FROM booksWHERE books.author_name = ? """, (authorInputBox.inputText, ))
 				print(cur.fetchall())
 			elif (bookInputBox.inputText):
 				print(bookInputBox.inputText)
-				cur.execute(""" SELECT * FROM books
-								WHERE books.book_name = ?
-								""", (bookInputBox.inputText, ))
+				cur.execute(""" SELECT * FROM books WHERE books.book_name = ? """, (bookInputBox.inputText, ))
 				print(cur.fetchall())
 		
 
@@ -223,7 +178,7 @@ def main():
 		searchStoryButton.draw()
 		if (searchStoryButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT * FROM books WHERE books.id = (SELECT id FROM stories WHERE (story_name = ? AND books.id = id))""", (storyInputBox.inputText, ))
+			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
 			print(cur.fetchall())
 		Splitter.draw(controlX, 320)
 		#=======================================
@@ -239,31 +194,26 @@ def main():
 		if (authorStorySearchButton.isClicked()):
 			print("Search stories - ", authorStorySearchInputBox.inputText)
 			cur = connection.cursor()
-			cur.execute("""
-				SELECT author_name, story_name, book_name, genre FROM
-				(SELECT * FROM stories NATURAL JOIN books WHERE books.author_name = ?)
-				NATURAL JOIN
-				(SELECT * from stories NATURAL JOIN book_to_genre)
-				""", (authorStorySearchInputBox.inputText, ))
+			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
 			print(cur.fetchall())
 
 		Splitter.draw(controlX, 600)
 		#=======================================
 
 		#=======================================
-		# Print a genre
+		# Print books by a genre
 		BackgroundBox.draw(controlX, 365, screen_width, 99, GRAY)
 		Splitter.draw(controlX, 460)
-		draw_text("Print books by genre", controlX + 20, 330, 30, DARKGRAY)
+		draw_text("Print books by a genre", controlX + 20, 330, 30, DARKGRAY)
 		Splitter.draw(controlX, 365)
 		draw_text("Pick genre", controlX + 20, 380, 30, DARKGRAY)
 		genreDropDown.draw()
 		genrePickButton.draw()
+		# I need to print book by genre depenging on which novels are in it
 		if (genrePickButton.isClicked()):
 			print("Books by genre - ")
 			cur = connection.cursor()
-			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, genre
-							FROM books INNER JOIN book_to_genre as bg ON books.id = bg.id AND bg.genre = ? """, (genreDropDown.currentVariant,))
+			cur.execute(""" SELECT book_name, author_name, story_name, genre FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
 			print(cur.fetchall())
 
 		#=======================================
@@ -277,6 +227,12 @@ def main():
 		draw_text("Print duplicates", controlX + 20, 840, 30, DARKGRAY)
 		if (duplicatesButton.isClicked()):
 			print("Print duplicates")
+			cur = connection.cursor()
+			cur.execute(""" SELECT * FROM books
+							NATURAL JOIN
+							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1))""")
+			for pr in cur.fetchall():
+				print(pr)			
 		#=======================================
 
 		#=======================================
@@ -290,8 +246,25 @@ def main():
 		draw_text("Genre", controlX + 20, 700, 30, DARKGRAY)
 		authorNovelCountDropDown.draw()
 		authorNovelCountButton.draw()
+		authorNovelCountInputCheckBox.draw()
+		authorNovelCountDropDownCheckBox.draw()
 		if (authorNovelCountButton.isClicked()):
 			print("Count novels - ", authorNovelCountDropDown.currentVariant, authorNovelCountInputBox.inputText)
+			cur = connection.cursor()
+			if (authorNovelCountDropDownCheckBox.checked and authorNovelCountInputCheckBox.checked):
+				print("Dropdown and Input")
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ? and stories.genre = ?""", 
+					(authorNovelCountInputBox.inputText, authorNovelCountDropDown.currentVariant))
+				print(cur.fetchall())
+			elif (authorNovelCountDropDownCheckBox.checked):
+				print("Dropdown")
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE stories.genre = ? """, (authorNovelCountDropDown.currentVariant,))
+				print(cur.fetchall())
+			elif (authorNovelCountInputCheckBox.checked):
+				print("Input")
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorNovelCountInputBox.inputText, ))
+				print(cur.fetchall())
+
 		#=======================================
 
 		end_drawing()
@@ -299,14 +272,6 @@ def main():
 	close_window()
 
 	dump_data = False
-
-	if dump_data:
-		cur = connection.cursor()
-		cur.execute(""" INSERT INTO book_name_to_id(book_name, id) VALUES('Name #1', 0) """)
-		cur.execute(""" INSERT INTO book_name_to_id(book_name, id) VALUES('Name #3', 1) """)
-		cur.execute(""" INSERT INTO book_name_to_id(book_name, id) VALUES('Name #2', 2) """)
-
-		connection.commit()
 
 	if dump_data:
 		book1 = (0, "book #1", "author #1", "12-03-1999", "place #1")
@@ -318,28 +283,14 @@ def main():
 
 	if dump_data:
 		cur = connection.cursor()
-		# it should be "id -> book_id"
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(0, "story #1") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(0, "story #2") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(1, "story #3") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(1, "story #4") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(1, "story #5") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(1, "story #6") """)
-		cur.execute(""" INSERT INTO stories(id, story_name) VALUES(2, "story #7") """)
-		connection.commit()
-
-	if dump_data:
-		cur = connection.cursor()
-		cur.execute(""" INSERT INTO book_to_genre(id, genre) VALUES(2, "Sci-Fi") """)
-		cur.execute(""" INSERT INTO book_to_genre(id, genre) VALUES(0, "Sci-Fi") """)
-		cur.execute(""" INSERT INTO book_to_genre(id, genre) VALUES(1, "Adventures") """)
-		connection.commit()
-
-	if dump_data:
-		cur = connection.cursor()
-		cur.execute(""" INSERT INTO author_name_to_id(id, author_name) VALUES(0, "author #1") """)
-		cur.execute(""" INSERT INTO author_name_to_id(id, author_name) VALUES(2, "author #1") """)
-		cur.execute(""" INSERT INTO author_name_to_id(id, author_name) VALUES(1, "author #2") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #1", "Sci-Fi") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #2", "Adventures") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #3", "Sci-Fi") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #4", "Detectives") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #5", "Detectives") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #6", "Sci-Fi") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(2, "story #7", "Adventures") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #7", "Adventures") """)
 		connection.commit()
 
 main()
