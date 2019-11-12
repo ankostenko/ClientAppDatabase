@@ -52,6 +52,10 @@ class ResultViewer:
 		self.page = 1
 		self.results = []
 		self.header = ""
+		self.prevColWidth = 0
+		self.startScrollPoint = Vector2(0, 0)
+		self.leftScollerEdge = 0
+		self.scrollPressed = False
 
 	def draw(self, width):
 		draw_rectangle(0, 0, width, 50, GRAY)
@@ -72,7 +76,29 @@ class ResultViewer:
 			else:
 				draw_rectangle(0, 50 * (index + 1), width, 50, ColorOdd)
 
-		prevColWidth = 0
+		# Scroller
+		ratioTableWidthToViewerWidth = self.prevColWidth / width
+		horizontalScrollWidth = width
+		if (ratioTableWidthToViewerWidth > 1):
+			horizontalScrollWidth = width * (2 - ratioTableWidthToViewerWidth)
+		scrollerRect = Rectangle(self.leftScollerEdge, 880, horizontalScrollWidth, 20)
+		draw_rectangle_rec(scrollerRect, DARKBLUE)
+		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
+			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
+				self.startScrollPoint = get_mouse_position()
+				self.scrollPressed = True
+			if (is_mouse_button_down(MOUSE_LEFT_BUTTON)):
+				mousePosition = get_mouse_position()
+				self.leftScollerEdge = mousePosition.x - self.startScrollPoint.x - self.leftScollerEdge / 2
+
+		if (self.scrollPressed and is_mouse_button_released(MOUSE_LEFT_BUTTON)):
+			self.scrollPressed = False
+
+		if (self.scrollPressed):
+			mousePosition = get_mouse_position()
+			self.leftScollerEdge = mousePosition.x - self.startScrollPoint.x - self.leftScollerEdge / 2
+
+		self.prevColWidth = -self.leftScollerEdge
 		for column in range(0, len(self.header)):
 			# Determine max length in a column
 			magicAligningConstant = 20
@@ -85,12 +111,12 @@ class ResultViewer:
 			columnHeight = 50
 			leftPadding = 10
 			topPadding = 10
-			draw_text(str(self.header[column]), leftPadding + prevColWidth, topPadding, 30, DARKBLUE)  
+			draw_text(str(self.header[column]), leftPadding + self.prevColWidth, topPadding, 30, DARKBLUE)  
 			for index, result in enumerate(self.results, start = 1):
-				draw_text(str(result[column]), leftPadding + prevColWidth, topPadding + columnHeight * index, 30, DARKBLUE)
+				draw_text(str(result[column]), leftPadding + self.prevColWidth, topPadding + columnHeight * index, 30, DARKBLUE)
 			if (column != len(self.header) - 1):
-				draw_rectangle(prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1), DARKGRAY)
-			prevColWidth += columnWidth
+				draw_rectangle(self.prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1), DARKGRAY)
+			self.prevColWidth += columnWidth
 
 		Splitter.draw(0, 10)
 
