@@ -136,7 +136,7 @@ def main():
 
 		#=======================================
 		# Result viewer
-		resultViewer.draw(controlX - 1)
+		resultViewer.draw(controlX - 1, screen_height)
 		#=======================================
 		
 

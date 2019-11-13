@@ -47,40 +47,21 @@ class CheckBox:
 			new_rect = Rectangle(self.rect.x + 5, self.rect.y + 5, self.rect.width - 10, self.rect.height - 10)
 			draw_rectangle_rec(new_rect, DARKBLUE)
 
-class ResultViewer:
+class HorizontalScroller:
 	def __init__(self):
-		self.page = 1
-		self.results = []
-		self.header = ""
-		self.prevColWidth = 0
 		self.startScrollPoint = Vector2(0, 0)
-		self.leftScollerEdge = 0
 		self.scrollPressed = False
+		self.leftScollerEdge = 0
 
-	def draw(self, width):
-		draw_rectangle(0, 0, width, 50, GRAY)
-
-		if (not self.results):
-			draw_text("Nothing to display here...", 225, 400, 50, DARKBLUE)
-			return
-
-		ColorEven = LIGHTGRAY
-		ColorOdd = RAYWHITE
-		# Swap color to end with the gray color
-		if (len(self.results) % 2 == 0):
-			ColorEven, ColorOdd = ColorOdd, ColorEven
-		# First draw row's background
-		for index in range(len(self.results)):
-			if (index % 2 == 0):
-				draw_rectangle(0, 50 * (index + 1), width, 50, ColorEven)
-			else:
-				draw_rectangle(0, 50 * (index + 1), width, 50, ColorOdd)
-
-		# Scroller
-		ratioTableWidthToViewerWidth = self.prevColWidth / width
-		horizontalScrollWidth = width
+	def draw(self, tableWidth, viewerWidth):
+		viewerWidth -= 15
+		ratioTableWidthToViewerWidth = tableWidth / viewerWidth
+		horizontalScrollWidth = viewerWidth
 		if (ratioTableWidthToViewerWidth > 1):
-			horizontalScrollWidth = width * (2 - ratioTableWidthToViewerWidth)
+			horizontalScrollWidth = viewerWidth * (2 - ratioTableWidthToViewerWidth)
+		else:
+			self.leftScollerEdge = 0
+			return 
 		scrollerRect = Rectangle(self.leftScollerEdge, 880, horizontalScrollWidth, 20)
 		draw_rectangle_rec(scrollerRect, DARKBLUE)
 		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
@@ -98,7 +79,86 @@ class ResultViewer:
 			mousePosition = get_mouse_position()
 			self.leftScollerEdge = mousePosition.x - self.startScrollPoint.x - self.leftScollerEdge / 2
 
-		self.prevColWidth = -self.leftScollerEdge
+			if (self.leftScollerEdge < 0):
+				self.leftScollerEdge = 0
+			if (self.leftScollerEdge + horizontalScrollWidth > viewerWidth):
+				self.leftScollerEdge = viewerWidth - horizontalScrollWidth
+
+class VerticalScroller:
+	def __init__(self):
+		self.topScollerEdge = 0
+		self.scrollPressed = False
+		self.startScrollPoint = Vector2(0, 0)
+
+	def draw(self, tableHeight, viewerHeight, viewerWidth):
+		ratioTableWidthToViewerWidth = tableHeight / viewerHeight
+		verticalScrollHeight = viewerHeight
+		if (ratioTableWidthToViewerWidth > 1):
+			verticalScrollHeight = viewerHeight * (2 - ratioTableWidthToViewerWidth)
+		else:
+			return 
+
+		scollerWidthPix = 15
+		scrollerRect = Rectangle(viewerWidth - scollerWidthPix, self.topScollerEdge, scollerWidthPix, verticalScrollHeight)
+		draw_rectangle_rec(scrollerRect, DARKBLUE)
+		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
+			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
+				self.startScrollPoint = get_mouse_position()
+				self.scrollPressed = True
+			if (is_mouse_button_down(MOUSE_LEFT_BUTTON)):
+				mousePosition = get_mouse_position()
+				self.topScollerEdge = mousePosition.y - self.startScrollPoint.y - self.topScollerEdge / 2
+
+		if (self.scrollPressed and is_mouse_button_released(MOUSE_LEFT_BUTTON)):
+			self.scrollPressed = False
+
+		if (self.scrollPressed):
+			mousePosition = get_mouse_position()
+			self.topScollerEdge = mousePosition.y - self.startScrollPoint.y - self.topScollerEdge / 2
+
+			if (self.topScollerEdge < 0):
+				self.topScollerEdge = 0
+			if (self.topScollerEdge + verticalScrollHeight > viewerHeight):
+				self.topScollerEdge = viewerHeight - verticalScrollHeight
+
+class ResultViewer:
+	def __init__(self):
+		self.page = 1
+		self.results = []
+		self.header = ""
+		self.tableWidth = 0
+		self.tableHeight = 0
+		self.horizontalScroller = HorizontalScroller()
+		self.verticalScroller = VerticalScroller()
+
+	def draw(self, width, height):
+		prevColHeight = -self.verticalScroller.topScollerEdge
+		draw_rectangle(0, prevColHeight, width, 50, GRAY)
+
+		if (not self.results):
+			draw_text("Nothing to display here...", 225, 400, 50, DARKBLUE)
+			return
+		
+
+		ColorEven = LIGHTGRAY
+		ColorOdd = RAYWHITE
+		# Swap color to end with the gray color
+		if (len(self.results) % 2 == 0):
+			ColorEven, ColorOdd = ColorOdd, ColorEven
+		# First draw row's background
+		for index in range(len(self.results)):
+			if (index % 2 == 0):
+				draw_rectangle(0, 50 * (index + 1) + prevColHeight, width, 50, ColorEven)
+			else:
+				draw_rectangle(0, 50 * (index + 1) + prevColHeight, width, 50, ColorOdd)
+
+
+		# Horizontal scroller
+		self.horizontalScroller.draw(self.tableWidth, width)
+
+		prevColWidth = -self.horizontalScroller.leftScollerEdge
+
+		self.tableWidth = 0
 		for column in range(0, len(self.header)):
 			# Determine max length in a column
 			magicAligningConstant = 20
@@ -111,12 +171,17 @@ class ResultViewer:
 			columnHeight = 50
 			leftPadding = 10
 			topPadding = 10
-			draw_text(str(self.header[column]), leftPadding + self.prevColWidth, topPadding, 30, DARKBLUE)  
+			draw_text(str(self.header[column]), leftPadding + prevColWidth, topPadding + prevColHeight, 30, DARKBLUE)  
 			for index, result in enumerate(self.results, start = 1):
-				draw_text(str(result[column]), leftPadding + self.prevColWidth, topPadding + columnHeight * index, 30, DARKBLUE)
+				draw_text(str(result[column]), leftPadding + prevColWidth, topPadding + columnHeight * index + prevColHeight, 30, DARKBLUE)
 			if (column != len(self.header) - 1):
-				draw_rectangle(self.prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1), DARKGRAY)
-			self.prevColWidth += columnWidth
+				draw_rectangle(prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1) + prevColHeight, DARKGRAY)
+			prevColWidth += columnWidth
+			prevColWidth += columnHeight
+			self.tableWidth += columnWidth
+
+		# Vertical scroller
+		self.verticalScroller.draw(self.tableHeight, height, width)
 
 		Splitter.draw(0, 10)
 
