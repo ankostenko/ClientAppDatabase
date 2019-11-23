@@ -21,8 +21,8 @@ def create_table(connection, sql_query):
 		print(e)
 
 def insert_book(connection, book):
-	query = ''' INSERT INTO books(book_id, book_name, author_name, pub_date, pub_plc) 
-				VALUES(?, ?, ?, ?, ?) '''
+	query = ''' INSERT INTO books(book_id, book_name, author_name, pub_date, pub_plc, price, is_borrowed)
+				VALUES(?, ?, ?, ?, ?, ?, ?) '''
 
 	cur = connection.cursor()
 	cur.execute(query, book)
@@ -41,14 +41,17 @@ def init_database():
 					book_name text NOT NULL,
 					author_name text NOT NULL,
 					pub_date text NOT NULL,
-					pub_plc text NOT NULL
+					pub_plc text NOT NULL,
+					price integer NOT NULL,
+					is_borrowed integer NOT NULL
 				)""")
 
 		create_table(connection, """
 				CREATE TABLE IF NOT EXISTS stories (
 					book_id integer NOT NULL,
 					story_name text NOT NULL,
-					genre text NOT NULL
+					genre text NOT NULL,
+					comment text NOT NULL
 				)""")
 
 	return connection
@@ -160,19 +163,19 @@ def main():
 			cur = connection.cursor()
 			if (authorInputBox.inputText and bookInputBox.inputText):
 				print(bookInputBox.inputText)
-				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
 								FROM books WHERE (books.book_name = ? AND books.author_name = ?) """, (bookInputBox.inputText, authorInputBox.inputText))
-				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
-				resultViewer.results= cur.fetchall()
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
+				resultViewer.results = cur.fetchall()
 			elif (authorInputBox.inputText):
-				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
 								FROM books WHERE books.author_name = ? """, (authorInputBox.inputText, ))
-				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
 			elif (bookInputBox.inputText):
-				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc
+				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
 								FROM books WHERE books.book_name = ? """, (bookInputBox.inputText, ))
-				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place"]
+				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
 
 		Splitter.draw(controlX, 180)
@@ -190,8 +193,8 @@ def main():
 		searchStoryButton.draw()
 		if (searchStoryButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
-			resultViewer.header = ["Story name", "Book name", "Author name", "Genre"]
+			cur.execute(""" SELECT story_name, book_name, author_name, genre, comment FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
+			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Comment"]
 			resultViewer.results = cur.fetchall()
 		Splitter.draw(controlX, 320)
 		#=======================================
@@ -206,8 +209,8 @@ def main():
 		authorStorySearchButton.draw()
 		if (authorStorySearchButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT story_name, book_name, author_name, genre FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
-			resultViewer.header = ["Story name", "Book name", "Author name", "Genre"]
+			cur.execute(""" SELECT story_name, book_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
+			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
 
 		Splitter.draw(controlX, 600)
@@ -224,8 +227,8 @@ def main():
 		genrePickButton.draw()
 		if (genrePickButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT book_name, author_name, story_name, genre FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
-			resultViewer.header = ["Book name", "Author name", "Story name", "Genre"]
+			cur.execute(""" SELECT book_name, author_name, story_name, genre, price, comment FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
+			resultViewer.header = ["Book name", "Author name", "Story name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
 		#=======================================
 
@@ -238,11 +241,11 @@ def main():
 		draw_text("Print duplicates", controlX + 20, 840, 30, DARKGRAY)
 		if (duplicatesButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, story_name, genre FROM books
+			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, story_name, genre, price, comment FROM books
 							NATURAL JOIN
 							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1))""")
-			resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Story name", "Genre"]
-			resultViewer.results.extend(cur.fetchall())
+			resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Story name", "Genre", "Price", "Comment"]
+			resultViewer.results = cur.fetchall()
 		#=======================================
 
 		#=======================================
@@ -281,23 +284,23 @@ def main():
 	dump_data = False
 
 	if dump_data:
-		book1 = (0, "book #1", "author #1", "12-03-1999", "place #1")
-		book2 = (1, "book #3", "author #2", "12-03-1994", "place #2")
-		book3 = (2, "book #2", "author #1", "12-03-2009", "place #3")
+		book1 = (0, "book #1", "author #1", "12-03-1999", "place #1", 1200, 0)
+		book2 = (1, "book #3", "author #2", "12-03-1994", "place #2",  800, 0)
+		book3 = (2, "book #2", "author #1", "12-03-2009", "place #3", 1300, 0)
 		insert_book(connection, book1)
 		insert_book(connection, book2)
 		insert_book(connection, book3)
 
 	if dump_data:
 		cur = connection.cursor()
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #1", "Sci-Fi") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #2", "Adventures") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #3", "Sci-Fi") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #4", "Detectives") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #5", "Detectives") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(1, "story #6", "Sci-Fi") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(2, "story #7", "Adventures") """)
-		cur.execute(""" INSERT INTO stories(book_id, story_name, genre) VALUES(0, "story #7", "Adventures") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(0, "story #1", "Sci-Fi"		, "comment #1") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(0, "story #2", "Adventures"	, 			"") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(1, "story #3", "Sci-Fi"		, "comment #2") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(1, "story #4", "Detectives"	, "comment #3") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(1, "story #5", "Detectives"	, "comment #4") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(1, "story #6", "Sci-Fi"		, "comment #5") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(2, "story #7", "Adventures"	, 			"") """)
+		cur.execute(""" INSERT INTO stories(book_id, story_name, genre, comment) VALUES(0, "story #7", "Adventures"	, "comment #7") """)
 		connection.commit()
 
 main()
