@@ -161,24 +161,27 @@ class ResultViewer:
 		for column in range(0, len(self.header)):
 			# Determine max length in a column
 			magicAligningConstant = 20
+			leftPadding = 10
+			topPadding = 10
+			columnHeight = 50
+			self.tableHeight = 0
 			columnWidth = measure_text(self.header[column], 30) + magicAligningConstant
 			for result in self.results:
 				length = measure_text(str(result[column]), 30) + magicAligningConstant
 				if (columnWidth < length):
 					columnWidth = length
+				
+				self.tableHeight += columnHeight
 
-			columnHeight = 50
-			leftPadding = 10
-			topPadding = 10
+
 			draw_text(str(self.header[column]), leftPadding + prevColWidth, topPadding + prevColHeight, 30, DARKBLUE)  
 			for index, result in enumerate(self.results, start = 1):
 				draw_text(str(result[column]), leftPadding + prevColWidth, topPadding + columnHeight * index + prevColHeight, 30, DARKBLUE)
 			if (column != len(self.header) - 1):
 				draw_rectangle(prevColWidth + columnWidth, 0, 2, columnHeight * (len(self.results) + 1) + prevColHeight, DARKGRAY)
 			prevColWidth += columnWidth
-			prevColWidth += columnHeight
 			self.tableWidth += columnWidth
-
+			
 		# Vertical scroller
 		self.verticalScroller.draw(self.tableHeight, height, width)
 

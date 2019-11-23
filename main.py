@@ -242,7 +242,7 @@ def main():
 							NATURAL JOIN
 							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1))""")
 			resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Story name", "Genre"]
-			resultViewer.results = cur.fetchall()
+			resultViewer.results.extend(cur.fetchall())
 		#=======================================
 
 		#=======================================
