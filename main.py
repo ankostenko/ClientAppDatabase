@@ -127,7 +127,6 @@ def main():
 				currentInputBox.inputText = currentInputBox.inputText[:-1]
 				if (currentInputBox.charsLeft <= 21):
 					currentInputBox.charsLeft += 1
-
 		# =====================================
 
 		begin_drawing()
@@ -223,13 +222,11 @@ def main():
 		draw_text("Pick genre", controlX + 20, 380, 30, DARKGRAY)
 		genreDropDown.draw()
 		genrePickButton.draw()
-		# I need to print book by genre depenging on which novels are in it
 		if (genrePickButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, author_name, story_name, genre FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
 			resultViewer.header = ["Book name", "Author name", "Story name", "Genre"]
 			resultViewer.results = cur.fetchall()
-
 		#=======================================
 
 		#=======================================
@@ -275,7 +272,6 @@ def main():
 				resultViewer.header = [f"Number of novels by {authorNovelCountInputBox.inputText}"]
 
 			resultViewer.results = cur.fetchall()
-
 		#=======================================
 
 		end_drawing()

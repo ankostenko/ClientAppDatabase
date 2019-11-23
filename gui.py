@@ -61,7 +61,7 @@ class HorizontalScroller:
 			horizontalScrollWidth = viewerWidth * (2 - ratioTableWidthToViewerWidth)
 		else:
 			self.leftScollerEdge = 0
-			return 
+			return
 		scrollerRect = Rectangle(self.leftScollerEdge, 880, horizontalScrollWidth, 20)
 		draw_rectangle_rec(scrollerRect, DARKBLUE)
 		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
@@ -139,7 +139,6 @@ class ResultViewer:
 			draw_text("Nothing to display here...", 225, 400, 50, DARKBLUE)
 			return
 		
-
 		ColorEven = LIGHTGRAY
 		ColorOdd = RAYWHITE
 		# Swap color to end with the gray color
@@ -246,6 +245,9 @@ class InputBox:
 		draw_rectangle_rec(self.button, RAYWHITE)
 		if (self.drawAsClicked):
 			draw_rectangle_lines_ex(self.button, 2, RED)
+			# draw cursor pointer
+			cursorRect = Rectangle(self.button.x + 5 + measure_text(self.inputText, 20), self.button.y + self.button.height - 5, 15, 3)
+			draw_rectangle_rec(cursorRect, DARKPURPLE)
 		else:
 			draw_rectangle_lines_ex(self.button, 2, DARKPURPLE)
 
