@@ -51,7 +51,7 @@ class HorizontalScroller:
 	def __init__(self):
 		self.startScrollPoint = Vector2(0, 0)
 		self.scrollPressed = False
-		self.leftScollerEdge = 0
+		self.leftScrollerEdge = 0
 
 	def draw(self, tableWidth, viewerWidth):
 		viewerWidth -= 15
@@ -60,29 +60,33 @@ class HorizontalScroller:
 		if (ratioTableWidthToViewerWidth > 1):
 			horizontalScrollWidth = viewerWidth * (2 - ratioTableWidthToViewerWidth)
 		else:
-			self.leftScollerEdge = 0
+			self.leftScrollerEdge = 0
 			return
-		scrollerRect = Rectangle(self.leftScollerEdge, 880, horizontalScrollWidth, 20)
-		draw_rectangle_rec(scrollerRect, DARKBLUE)
+		scrollerRect = Rectangle(self.leftScrollerEdge, 880, horizontalScrollWidth, 20)
 		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
 			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
-				self.startScrollPoint = get_mouse_position()
+				self.startScrollPoint = get_mouse_position() - Vector2(self.leftScrollerEdge, 0)
 				self.scrollPressed = True
 			if (is_mouse_button_down(MOUSE_LEFT_BUTTON)):
 				mousePosition = get_mouse_position()
-				self.leftScollerEdge = mousePosition.x - self.startScrollPoint.x - self.leftScollerEdge / 2
+				self.leftScrollerEdge = mousePosition.x - self.startScrollPoint.x
+
+		if (not check_collision_point_rec(get_mouse_position(), Rectangle(scrollerRect.x, scrollerRect.y, viewerWidth, scrollerRect.height)) and not self.scrollPressed):
+			return
+
+		draw_rectangle_rec(scrollerRect, DARKBLUE)
 
 		if (self.scrollPressed and is_mouse_button_released(MOUSE_LEFT_BUTTON)):
 			self.scrollPressed = False
 
 		if (self.scrollPressed):
 			mousePosition = get_mouse_position()
-			self.leftScollerEdge = mousePosition.x - self.startScrollPoint.x - self.leftScollerEdge / 2
+			self.leftScrollerEdge = mousePosition.x - self.startScrollPoint.x 
 
-			if (self.leftScollerEdge < 0):
-				self.leftScollerEdge = 0
-			if (self.leftScollerEdge + horizontalScrollWidth > viewerWidth):
-				self.leftScollerEdge = viewerWidth - horizontalScrollWidth
+			if (self.leftScrollerEdge < 0):
+				self.leftScrollerEdge = 0
+			if (self.leftScrollerEdge + horizontalScrollWidth > viewerWidth):
+				self.leftScrollerEdge = viewerWidth - horizontalScrollWidth
 
 class VerticalScroller:
 	def __init__(self):
@@ -100,21 +104,25 @@ class VerticalScroller:
 
 		scollerWidthPix = 15
 		scrollerRect = Rectangle(viewerWidth - scollerWidthPix, self.topScollerEdge, scollerWidthPix, verticalScrollHeight)
-		draw_rectangle_rec(scrollerRect, DARKBLUE)
 		if (check_collision_point_rec(get_mouse_position(), scrollerRect)):
 			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
-				self.startScrollPoint = get_mouse_position()
+				self.startScrollPoint = get_mouse_position() - Vector2(0, self.topScollerEdge)
 				self.scrollPressed = True
 			if (is_mouse_button_down(MOUSE_LEFT_BUTTON)):
 				mousePosition = get_mouse_position()
-				self.topScollerEdge = mousePosition.y - self.startScrollPoint.y - self.topScollerEdge / 2
+				self.topScollerEdge = mousePosition.y - self.startScrollPoint.y
+		
+		if (not check_collision_point_rec(get_mouse_position(), Rectangle(scrollerRect.x, scrollerRect.y, scrollerRect.width, viewerHeight)) and not self.scrollPressed):
+			return
+
+		draw_rectangle_rec(scrollerRect, DARKBLUE)
 
 		if (self.scrollPressed and is_mouse_button_released(MOUSE_LEFT_BUTTON)):
 			self.scrollPressed = False
 
 		if (self.scrollPressed):
 			mousePosition = get_mouse_position()
-			self.topScollerEdge = mousePosition.y - self.startScrollPoint.y - self.topScollerEdge / 2
+			self.topScollerEdge = mousePosition.y - self.startScrollPoint.y
 
 			if (self.topScollerEdge < 0):
 				self.topScollerEdge = 0
@@ -153,14 +161,14 @@ class ResultViewer:
 
 
 		# Horizontal scroller
-		self.horizontalScroller.draw(self.tableWidth, width)
+		magicAligningConstant = 20
+		self.horizontalScroller.draw(self.tableWidth, width + magicAligningConstant)
 
-		prevColWidth = -self.horizontalScroller.leftScollerEdge
+		prevColWidth = -self.horizontalScroller.leftScrollerEdge
 
 		self.tableWidth = 0
 		for column in range(0, len(self.header)):
 			# Determine max length in a column
-			magicAligningConstant = 20
 			leftPadding = 10
 			topPadding = 10
 			columnHeight = 50
