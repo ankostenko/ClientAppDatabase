@@ -112,7 +112,10 @@ class VerticalScroller:
 				mousePosition = get_mouse_position()
 				self.topScollerEdge = mousePosition.y - self.startScrollPoint.y
 		
-		if (not check_collision_point_rec(get_mouse_position(), Rectangle(scrollerRect.x, scrollerRect.y, scrollerRect.width, viewerHeight)) and not self.scrollPressed):
+		wheelMovement = -get_mouse_wheel_move() * 15 
+		self.topScollerEdge += wheelMovement
+
+		if (wheelMovement == 0 and not check_collision_point_rec(get_mouse_position(), Rectangle(scrollerRect.x, scrollerRect.y, scrollerRect.width, viewerHeight)) and not self.scrollPressed):
 			return
 
 		draw_rectangle_rec(scrollerRect, DARKBLUE)
@@ -124,10 +127,10 @@ class VerticalScroller:
 			mousePosition = get_mouse_position()
 			self.topScollerEdge = mousePosition.y - self.startScrollPoint.y
 
-			if (self.topScollerEdge < 0):
-				self.topScollerEdge = 0
-			if (self.topScollerEdge + verticalScrollHeight > viewerHeight):
-				self.topScollerEdge = viewerHeight - verticalScrollHeight
+		if (self.topScollerEdge < 0):
+			self.topScollerEdge = 0
+		if (self.topScollerEdge + verticalScrollHeight > viewerHeight):
+			self.topScollerEdge = viewerHeight - verticalScrollHeight
 
 class ResultViewer:
 	def __init__(self):
