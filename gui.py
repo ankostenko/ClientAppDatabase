@@ -31,10 +31,10 @@ class Button:
 		draw_text(self.text, self.rect.x + 5, self.rect.y + 5, 20, SKYBLUE)
 
 class CheckBox:
-	def __init__(self, posX, posY, width, height):
+	def __init__(self, posX, posY, width, height, checked):
 		self.posY = posY
 		self.rect = Rectangle(posX, posY, width, height)
-		self.checked = True
+		self.checked = checked
 
 	def isClicked(self):
 		if (check_collision_point_rec(get_mouse_position(), self.rect)):
@@ -141,7 +141,6 @@ class VerticalScroller:
 
 class ResultViewer:
 	def __init__(self):
-		self.page = 1
 		self.results = []
 		self.oldResults = []
 		self.header = ""
@@ -208,7 +207,65 @@ class ResultViewer:
 
 	def set(self, new_results):
 		self.verticalScroller.topScollerEdge = 0
-		#self.results.extends(new_results
+
+
+class BookLenter:
+	def __init__(self, connection):
+		self.books = []
+		self.header = ["Present", "Book name", "Author name"]
+		self.connection = connection
+
+	def draw(self, width):
+		#draw_rectangle(0, 0, width, 1500, RAYWHITE)
+
+		if (not self.books):
+			return
+
+		columnHeight = 50
+
+		draw_rectangle(0, 0, width, columnHeight, GRAY)
+
+		for index in range(0, len(self.books)):
+			draw_rectangle(0, (index + 1) * columnHeight, width, columnHeight, LIGHTGRAY)
+
+		magicAligningConstant = 20
+		leftPadding = 10
+		topPadding = 10
+
+		for column in range(0, len(self.header)):
+			columnWidth = measure_text(str(self.header[column]), 30) + magicAligningConstant
+			draw_text(str(self.header[column]), leftPadding + columnWidth * column, topPadding, 30, DARKBLUE)
+			
+			for book in self.books:
+				length = measure_text(str(book[column - 1]), 30) + magicAligningConstant
+				if (length > columnWidth):
+					columnWidth = length
+
+			for index, book in enumerate(self.books, start = 1):
+				if (column == 0):
+					checkBox = CheckBox(columnWidth / 2 - 2 * leftPadding, topPadding + columnHeight * index, 30, 30, (not bool(book[0])))
+					checkBox.draw(0)
+					# if a book still in the library but we're lending it
+					# print(f"Index: {index} Book: {book} Checked: {checkBox.checked}")
+					if (checkBox.checked == False and book[0] == 0):
+						cur = self.connection.cursor()
+						cur.execute(""" UPDATE books SET is_lent = 1 WHERE books.book_id = ? """, (index - 1, ))
+						lst = list(book)
+						lst[0] = 1
+						self.books[index - 1] = tuple(lst)
+						self.connection.commit()
+					# if we want to return book to the library
+					if (checkBox.checked == True and book[0] == 1):
+						cur = self.connection.cursor()
+						cur.execute(""" UPDATE books SET is_lent = 0 WHERE books.book_id = ? """, (index - 1, ))
+						lst = list(book)
+						lst[0] = 0
+						self.books[index - 1] = tuple(lst)
+						self.connection.commit()
+
+				
+				if (column != 0):
+					draw_text(str(book[column]), leftPadding + columnWidth * column, topPadding + columnHeight * index, 30, DARKBLUE)
 
 class DropDown:
 	def __init__(self, posX, posY, width, height, variants = []):

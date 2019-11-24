@@ -21,7 +21,7 @@ def create_table(connection, sql_query):
 		print(e)
 
 def insert_book(connection, book):
-	query = ''' INSERT INTO books(book_id, book_name, author_name, pub_date, pub_plc, price, is_borrowed)
+	query = ''' INSERT INTO books(book_id, book_name, author_name, pub_date, pub_plc, price, is_lent)
 				VALUES(?, ?, ?, ?, ?, ?, ?) '''
 
 	cur = connection.cursor()
@@ -43,7 +43,7 @@ def init_database():
 					pub_date text NOT NULL,
 					pub_plc text NOT NULL,
 					price integer NOT NULL,
-					is_borrowed integer NOT NULL
+					is_lent integer NOT NULL
 				)""")
 
 		create_table(connection, """
@@ -85,8 +85,8 @@ def main():
 	authorNovelCountInputBox = InputBox(controlX + 200, controlY + 660, 260, 30, 21)
 	authorNovelCountDropDown = DropDown(controlX + 200, controlY + 700, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
 	authorNovelCountButton = Button("Count", controlX + 20, controlY + 740, 70, 30, SKYBLUE)
-	authorNovelCountInputCheckBox = CheckBox(controlX + 150, controlY + 660, 30, 30)
-	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, controlY + 700, 30, 30)
+	authorNovelCountInputCheckBox = CheckBox(controlX + 150, controlY + 660, 30, 30, True)
+	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, controlY + 700, 30, 30, True)
 
 	duplicatesButton = Button("Print", controlX + 300, controlY + 840, 60, 30, SKYBLUE)
 
@@ -96,10 +96,16 @@ def main():
 	addCommentNovelInputBox = InputBox(controlX + 200, controlY + 1110, 260, 30, 21)
 	addCommentCommentInputBox = InputBox(controlX + 200, controlY + 1150, 260, 30, 100)
 	addCommentButton = Button("Update", controlX + 20, controlY + 1190, 85, 30, SKYBLUE)
+
+	showLentBookButton = Button("Show", controlX + 200, controlY + 1290, 60, 30, SKYBLUE)
 	
 	currentInputBox = authorInputBox
 
 	resultViewer = ResultViewer()
+
+	bookLenter = BookLenter(connection)
+
+	drawResults = True
 	
 	while not window_should_close():
 		# =====================================
@@ -110,8 +116,8 @@ def main():
 
 		if (controlY > 0):
 			controlY = 0
-		if (controlY < -350):
-			controlY = -350
+		if (controlY < -500):
+			controlY = -500
 
 		if (authorInputBox.isClicked()):
 			currentInputBox.drawAsClicked = False
@@ -170,9 +176,15 @@ def main():
 		clear_background(RAYWHITE)
 
 		#=======================================
-		# Result viewer
-		resultViewer.draw(controlX - 1, screen_height)
+		if (drawResults):
+			# Result viewer
+			resultViewer.draw(controlX - 1, screen_height)
+		else:
+			# Book lenter
+			bookLenter.draw(controlX)
 		#=======================================
+
+
 		
 
 		# Control panel
@@ -197,20 +209,21 @@ def main():
 			if (authorInputBox.inputText and bookInputBox.inputText):
 				print(bookInputBox.inputText)
 				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
-								FROM books WHERE (books.book_name = ? AND books.author_name = ?) """, (bookInputBox.inputText, authorInputBox.inputText))
+								FROM books WHERE (books.book_name = ? AND books.author_name = ? AND books.is_lent = 0) """, (bookInputBox.inputText, authorInputBox.inputText))
 				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
 			elif (authorInputBox.inputText):
 				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
-								FROM books WHERE books.author_name = ? """, (authorInputBox.inputText, ))
+								FROM books WHERE books.author_name = ? AND books.is_lent = 0 """, (authorInputBox.inputText, ))
 				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
 			elif (bookInputBox.inputText):
 				cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, price
-								FROM books WHERE books.book_name = ? """, (bookInputBox.inputText, ))
+								FROM books WHERE books.book_name = ? AND books.is_lent = 0 """, (bookInputBox.inputText, ))
 				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
-
+			
+			drawResults = True
 		Splitter.draw(controlX, controlY + 180)
 		#=======================================
 
@@ -226,9 +239,10 @@ def main():
 		searchStoryButton.draw(controlY)
 		if (searchStoryButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT story_name, book_name, author_name, genre, comment FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
+			cur.execute(""" SELECT story_name, book_name, author_name, genre, comment FROM books NATURAL JOIN stories where stories.story_name = ? AND books.is_lent = 0""", (storyInputBox.inputText, ))
 			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Comment"]
 			resultViewer.results = cur.fetchall()
+			drawResults = True
 		Splitter.draw(controlX, controlY + 320)
 		#=======================================
 		
@@ -242,10 +256,10 @@ def main():
 		authorStorySearchButton.draw(controlY)
 		if (authorStorySearchButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT story_name, book_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
+			cur.execute(""" SELECT story_name, book_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE books.author_name = ? AND books.is_lent = 0""", (authorStorySearchInputBox.inputText, ))
 			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
-
+			drawResults = True
 		Splitter.draw(controlX, controlY + 600)
 		#=======================================
 
@@ -260,9 +274,10 @@ def main():
 		genrePickButton.draw(controlY)
 		if (genrePickButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT book_name, author_name, story_name, genre, price, comment FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
+			cur.execute(""" SELECT book_name, author_name, story_name, genre, price, comment FROM stories NATURAL JOIN books WHERE stories.genre = ? AND books.is_lent = 0""", (genreDropDown.currentVariant,))
 			resultViewer.header = ["Book name", "Author name", "Story name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
+			drawResults = True
 		#=======================================
 
 		#=======================================
@@ -276,9 +291,10 @@ def main():
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, story_name, genre, price, comment FROM books
 							NATURAL JOIN
-							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1))""")
+							(SELECT * FROM stories NATURAL JOIN (SELECT story_name FROM stories GROUP BY story_name HAVING COUNT(story_name) > 1)) WHERE books.is_lent = 0""")
 			resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Story name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
+			drawResults = True
 		#=======================================
 
 		#=======================================
@@ -297,17 +313,18 @@ def main():
 		if (authorNovelCountButton.isClicked()):
 			cur = connection.cursor()
 			if (authorNovelCountDropDownCheckBox.checked and authorNovelCountInputCheckBox.checked):
-				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ? and stories.genre = ?""", 
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ? AND stories.genre = ? AND books.is_lent = 0""", 
 					(authorNovelCountInputBox.inputText, authorNovelCountDropDown.currentVariant))
 				resultViewer.header = [f"Number of {authorNovelCountDropDown.currentVariant} novels by {authorNovelCountInputBox.inputText} "]
 			elif (authorNovelCountDropDownCheckBox.checked):
-				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE stories.genre = ? """, (authorNovelCountDropDown.currentVariant,))
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE stories.genre = ? AND books.is_lent = 0""", (authorNovelCountDropDown.currentVariant,))
 				resultViewer.header = [f"Number of {authorNovelCountDropDown.currentVariant} novels"]
 			elif (authorNovelCountInputCheckBox.checked):
-				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorNovelCountInputBox.inputText, ))
+				cur.execute(""" SELECT COUNT(distinct story_name) FROM books NATURAL JOIN stories WHERE books.author_name = ? AND books.is_lent = 0""", (authorNovelCountInputBox.inputText, ))
 				resultViewer.header = [f"Number of novels by {authorNovelCountInputBox.inputText}"]
 
 			resultViewer.results = cur.fetchall()
+			drawResults = True
 		#=======================================
 
 		#=======================================
@@ -321,9 +338,10 @@ def main():
 		searchNovelByCommentButton.draw(controlY)
 		if (searchNovelByCommentButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" SELECT book_name, story_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE stories.comment = ? """, (searchNovelByCommentInputBox.inputText,))
+			cur.execute(""" SELECT book_name, story_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE stories.comment = ? AND books.is_lent = 0""", (searchNovelByCommentInputBox.inputText,))
 			resultViewer.header = ["Book name", "Story name", "Author name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
+			drawResults = True
 		Splitter.draw(controlX, controlY + 1050)
 		#=======================================
 		
@@ -338,14 +356,33 @@ def main():
 		draw_text("Comment", controlX + 20, controlY + 1150, 30, DARKGRAY)
 		addCommentCommentInputBox.draw(controlY)
 		addCommentButton.draw(controlY)
+		Splitter.draw(controlX, controlY + 1235)
 
 		if (addCommentButton.isClicked()):
 			cur = connection.cursor()
-			cur.execute(""" UPDATE stories SET comment = ? WHERE stories.story_name = ?""", (addCommentCommentInputBox.inputText, addCommentNovelInputBox.inputText))
+			cur.execute(""" UPDATE stories SET comment = ? WHERE stories.story_name = ? """, (addCommentCommentInputBox.inputText, addCommentNovelInputBox.inputText))
 			cur.execute(""" SELECT story_name, comment FROM stories WHERE stories.story_name = ?""", (addCommentNovelInputBox.inputText, ))
 			connection.commit()
 			resultViewer.header = ["Story name", "Comment"]
 			resultViewer.results = cur.fetchall()
+			drawResults = True
+		#=======================================
+
+		#=======================================
+		# Show all books
+		# When all books are shown I can choose which ones are lent
+		draw_text("Show lent books", controlX + 20, controlY + 1245, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 1280, screen_width, 50, GRAY)
+		draw_text("Lent books", controlX + 20, controlY + 1290, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 1280)
+		showLentBookButton.draw(controlY)
+
+		if (showLentBookButton.isClicked()):
+			cur = connection.cursor()
+			cur.execute(""" SELECT is_lent, book_name, author_name FROM books """)
+			bookLenter.books = cur.fetchall()
+			drawResults = False
+
 		#=======================================
 
 		end_drawing()
