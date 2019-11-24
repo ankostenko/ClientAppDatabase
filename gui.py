@@ -2,6 +2,7 @@ from raylibpy import *
 
 class Button:
 	def __init__(self, text, posX, posY, width, height, color):
+		self.posY = posY
 		self.rect = Rectangle(posX, posY, width, height)
 		self.text = text
 		self.drawAsClicked = False
@@ -19,7 +20,8 @@ class Button:
 			self.drawAsClicked = False
 			return False
 
-	def draw(self):
+	def draw(self, newY):
+		self.rect.y = self.posY + newY
 		if (self.drawAsClicked):
 			draw_rectangle_rec(self.rect, LIGHTGRAY)
 		else:
@@ -30,6 +32,7 @@ class Button:
 
 class CheckBox:
 	def __init__(self, posX, posY, width, height):
+		self.posY = posY
 		self.rect = Rectangle(posX, posY, width, height)
 		self.checked = True
 
@@ -38,7 +41,8 @@ class CheckBox:
 			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
 				self.checked = not self.checked
 
-	def draw(self):
+	def draw(self, newY):
+		self.rect.y = self.posY + newY
 		self.isClicked()
 		draw_rectangle_rec(self.rect, LIGHTGRAY)
 		draw_rectangle_lines_ex(self.rect, 2, DARKBLUE)
@@ -94,7 +98,7 @@ class VerticalScroller:
 		self.scrollPressed = False
 		self.startScrollPoint = Vector2(0, 0)
 
-	def draw(self, tableHeight, viewerHeight, viewerWidth):
+	def draw(self, startX, startY, tableHeight, viewerHeight, viewerWidth):
 		ratioTableWidthToViewerWidth = tableHeight / viewerHeight
 		verticalScrollHeight = viewerHeight
 		if (ratioTableWidthToViewerWidth > 1):
@@ -112,8 +116,11 @@ class VerticalScroller:
 				mousePosition = get_mouse_position()
 				self.topScollerEdge = mousePosition.y - self.startScrollPoint.y
 		
-		wheelMovement = -get_mouse_wheel_move() * 15 
-		self.topScollerEdge += wheelMovement
+		mousePosition = get_mouse_position()
+		wheelMovement = 0
+		if (mousePosition.x > startX and mousePosition.y > startY and mousePosition.x < viewerWidth and mousePosition.y < viewerHeight):
+			wheelMovement = -get_mouse_wheel_move() * 15 
+			self.topScollerEdge += wheelMovement
 
 		if (wheelMovement == 0 and not check_collision_point_rec(get_mouse_position(), Rectangle(scrollerRect.x, scrollerRect.y, scrollerRect.width, viewerHeight)) and not self.scrollPressed):
 			return
@@ -136,6 +143,7 @@ class ResultViewer:
 	def __init__(self):
 		self.page = 1
 		self.results = []
+		self.oldResults = []
 		self.header = ""
 		self.tableWidth = 0
 		self.tableHeight = 0
@@ -194,15 +202,17 @@ class ResultViewer:
 			self.tableWidth += columnWidth
 			
 		# Vertical scroller
-		self.verticalScroller.draw(self.tableHeight, height, width)
+		self.verticalScroller.draw(0, 0, self.tableHeight, height, width)
 
 		Splitter.draw(0, 10)
 
 	def set(self, new_results):
-		self.results = new_results
+		self.verticalScroller.topScollerEdge = 0
+		#self.results.extends(new_results
 
 class DropDown:
 	def __init__(self, posX, posY, width, height, variants = []):
+		self.posY = posY
 		self.rect = Rectangle(posX, posY, width, height)
 		self.currentVariant = variants[0]
 		self.variants = variants
@@ -216,7 +226,8 @@ class DropDown:
 		else:
 			return False
 
-	def draw(self):
+	def draw(self, newY):
+		self.rect.y = self.posY + newY
 		self.isClicked()
 		draw_rectangle_rec(self.rect, RAYWHITE)
 		draw_text(self.currentVariant, self.rect.x + 35, self.rect.y + 5, 20, SKYBLUE)
@@ -243,6 +254,7 @@ class DropDown:
 
 class InputBox:
 	def __init__(self, posX, posY, width, height, maxChars):
+		self.posY = posY
 		self.rect = Rectangle(posX, posY, width, height)
 		self.drawAsClicked = False
 		self.inputText = ""
@@ -256,7 +268,8 @@ class InputBox:
 		else:
 			return False
 
-	def draw(self):
+	def draw(self, newY):
+		self.rect.y = self.posY + newY
 		draw_rectangle_rec(self.rect, RAYWHITE)
 		if (self.drawAsClicked):
 			draw_rectangle_lines_ex(self.rect, 2, RED)

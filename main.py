@@ -69,7 +69,8 @@ def main():
 	set_target_fps(60)
 
 	controlX = screen_width / 2 + 300
-	controlY = -200
+	controlY = 0
+
 
 	authorInputBox = InputBox(controlX + 200, controlY + 60, 260, 30, 21)
 	bookInputBox = InputBox(controlX + 200, controlY + 100, 260, 30, 21)
@@ -90,15 +91,28 @@ def main():
 	duplicatesButton = Button("Print", controlX + 300, controlY + 840, 60, 30, SKYBLUE)
 
 	searchNovelByCommentInputBox = InputBox(controlX + 200, controlY + 960, 260, 30, 100)
-	searchNovelByCommentButton = Button("Search", controlX + 20, controlY + 1000, 85, 30, SKYBLUE)	
+	searchNovelByCommentButton = Button("Search", controlX + 20, controlY + 1000, 85, 30, SKYBLUE)
 
-	resultViewer = ResultViewer()
-
+	addCommentNovelInputBox = InputBox(controlX + 200, controlY + 1110, 260, 30, 21)
+	addCommentCommentInputBox = InputBox(controlX + 200, controlY + 1150, 260, 30, 100)
+	addCommentButton = Button("Update", controlX + 20, controlY + 1190, 85, 30, SKYBLUE)
+	
 	currentInputBox = authorInputBox
 
+	resultViewer = ResultViewer()
+	
 	while not window_should_close():
 		# =====================================
 		# Input
+		mousePosition = get_mouse_position()
+		if (mousePosition.x > controlX):
+			controlY += get_mouse_wheel_move() * 15
+
+		if (controlY > 0):
+			controlY = 0
+		if (controlY < -350):
+			controlY = -350
+
 		if (authorInputBox.isClicked()):
 			currentInputBox.drawAsClicked = False
 			currentInputBox = authorInputBox
@@ -129,7 +143,17 @@ def main():
 			currentInputBox = searchNovelByCommentInputBox
 			currentInputBox.drawAsClicked = True
 
-		if (currentInputBox.drawAsClicked):
+		if (addCommentNovelInputBox.isClicked()):
+			currentInputBox.drawAsClicked = False
+			currentInputBox = addCommentNovelInputBox
+			currentInputBox.drawAsClicked = True
+
+		if (addCommentCommentInputBox.isClicked()):
+			currentInputBox.drawAsClicked = False
+			currentInputBox = addCommentCommentInputBox
+			currentInputBox.drawAsClicked = True
+
+		if (currentInputBox and currentInputBox.drawAsClicked):
 			key = get_key_pressed()
 			if (key >= 32 and key <= 125):
 				if (currentInputBox.charsLeft > 0):
@@ -162,12 +186,12 @@ def main():
 
 		Splitter.draw(controlX, controlY + 45)
 		draw_text("Author", controlX + 20, controlY + 60, 30, DARKGRAY)
-		authorInputBox.draw()
+		authorInputBox.draw(controlY)
 
 		draw_text("Book name", controlX + 20, controlY + 100, 30, DARKGRAY)
-		bookInputBox.draw()
+		bookInputBox.draw(controlY)
 
-		searchBookAuthorButton.draw()
+		searchBookAuthorButton.draw(controlY)
 		if(searchBookAuthorButton.isClicked()):
 			cur = connection.cursor()
 			if (authorInputBox.inputText and bookInputBox.inputText):
@@ -197,9 +221,9 @@ def main():
 		draw_text("Find novel by name", controlX + 20, controlY + 190, 30, DARKGRAY)				
 		Splitter.draw(controlX, controlY + 225)
 		draw_text("Story name", controlX + 20, controlY + 240, 30, DARKGRAY)
-		storyInputBox.draw()
+		storyInputBox.draw(controlY)
 
-		searchStoryButton.draw()
+		searchStoryButton.draw(controlY)
 		if (searchStoryButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT story_name, book_name, author_name, genre, comment FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
@@ -214,8 +238,8 @@ def main():
 		draw_text("Search author's novels", controlX + 20, controlY + 470, 30, DARKGRAY)
 		Splitter.draw(controlX, controlY + 505)
 		draw_text("Author", controlX + 20, controlY + 520, 30, DARKGRAY)
-		authorStorySearchInputBox.draw()
-		authorStorySearchButton.draw()
+		authorStorySearchInputBox.draw(controlY)
+		authorStorySearchButton.draw(controlY)
 		if (authorStorySearchButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT story_name, book_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE books.author_name = ?""", (authorStorySearchInputBox.inputText, ))
@@ -232,8 +256,8 @@ def main():
 		draw_text("Print books by a genre", controlX + 20, controlY + 330, 30, DARKGRAY)
 		Splitter.draw(controlX, controlY + 365)
 		draw_text("Pick genre", controlX + 20, controlY + 380, 30, DARKGRAY)
-		genreDropDown.draw()
-		genrePickButton.draw()
+		genreDropDown.draw(controlY)
+		genrePickButton.draw(controlY)
 		if (genrePickButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, author_name, story_name, genre, price, comment FROM stories NATURAL JOIN books WHERE stories.genre = ?""", (genreDropDown.currentVariant,))
@@ -246,7 +270,7 @@ def main():
 		BackgroundBox.draw(controlX, controlY + 820, screen_width, 70, GRAY)
 		draw_text("Duplicates Info", controlX + 20, controlY + 790, 30, DARKGRAY)
 		Splitter.draw(controlX, controlY + 820)
-		duplicatesButton.draw()	
+		duplicatesButton.draw(controlY)	
 		draw_text("Print duplicates", controlX + 20, controlY + 840, 30, DARKGRAY)
 		if (duplicatesButton.isClicked()):
 			cur = connection.cursor()
@@ -264,12 +288,12 @@ def main():
 		Splitter.draw(controlX, controlY + 645)
 		Splitter.draw(controlX, controlY + 780)
 		draw_text("Author", controlX + 20, controlY + 660, 30, DARKGRAY)
-		authorNovelCountInputBox.draw()
+		authorNovelCountInputBox.draw(controlY)
 		draw_text("Genre", controlX + 20, controlY + 700, 30, DARKGRAY)
-		authorNovelCountDropDown.draw()
-		authorNovelCountButton.draw()
-		authorNovelCountInputCheckBox.draw()
-		authorNovelCountDropDownCheckBox.draw()
+		authorNovelCountDropDown.draw(controlY)
+		authorNovelCountButton.draw(controlY)
+		authorNovelCountInputCheckBox.draw(controlY)
+		authorNovelCountDropDownCheckBox.draw(controlY)
 		if (authorNovelCountButton.isClicked()):
 			cur = connection.cursor()
 			if (authorNovelCountDropDownCheckBox.checked and authorNovelCountInputCheckBox.checked):
@@ -293,8 +317,8 @@ def main():
 		draw_text("Search a novel by a comment", controlX + 20, controlY + 900, 30, DARKGRAY)
 		Splitter.draw(controlX, controlY + 940)
 		draw_text("Comment", controlX + 20, controlY + 960, 30, DARKGRAY)
-		searchNovelByCommentInputBox.draw()
-		searchNovelByCommentButton.draw()
+		searchNovelByCommentInputBox.draw(controlY)
+		searchNovelByCommentButton.draw(controlY)
 		if (searchNovelByCommentButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, story_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE stories.comment = ? """, (searchNovelByCommentInputBox.inputText,))
@@ -302,8 +326,27 @@ def main():
 			resultViewer.results = cur.fetchall()
 		Splitter.draw(controlX, controlY + 1050)
 		#=======================================
+		
+		#=======================================
+		# Add or update comment
+		BackgroundBox.draw(controlX, controlY + 1090, screen_width, 145, GRAY)
+		draw_text("Update or add comment", controlX + 20, controlY + 1060, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 1090)
 
+		draw_text("Novel", controlX + 20, controlY + 1110, 30, DARKGRAY)
+		addCommentNovelInputBox.draw(controlY)
+		draw_text("Comment", controlX + 20, controlY + 1150, 30, DARKGRAY)
+		addCommentCommentInputBox.draw(controlY)
+		addCommentButton.draw(controlY)
 
+		if (addCommentButton.isClicked()):
+			cur = connection.cursor()
+			cur.execute(""" UPDATE stories SET comment = ? WHERE stories.story_name = ?""", (addCommentCommentInputBox.inputText, addCommentNovelInputBox.inputText))
+			cur.execute(""" SELECT story_name, comment FROM stories WHERE stories.story_name = ?""", (addCommentNovelInputBox.inputText, ))
+			connection.commit()
+			resultViewer.header = ["Story name", "Comment"]
+			resultViewer.results = cur.fetchall()
+		#=======================================
 
 		end_drawing()
 
