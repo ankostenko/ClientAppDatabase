@@ -2,12 +2,12 @@ from raylibpy import *
 
 class Button:
 	def __init__(self, text, posX, posY, width, height, color):
-		self.button = Rectangle(posX, posY, width, height)
+		self.rect = Rectangle(posX, posY, width, height)
 		self.text = text
 		self.drawAsClicked = False
 
 	def isClicked(self):
-		if (check_collision_point_rec(get_mouse_position(), self.button)):
+		if (check_collision_point_rec(get_mouse_position(), self.rect)):
 			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
 				return True
 			
@@ -21,12 +21,12 @@ class Button:
 
 	def draw(self):
 		if (self.drawAsClicked):
-			draw_rectangle_rec(self.button, LIGHTGRAY)
+			draw_rectangle_rec(self.rect, LIGHTGRAY)
 		else:
-			draw_rectangle_rec(self.button, GRAY)
+			draw_rectangle_rec(self.rect, GRAY)
 
-		draw_rectangle_lines_ex(self.button, 2, DARKGRAY)
-		draw_text(self.text, self.button.x + 5, self.button.y + 5, 20, SKYBLUE)
+		draw_rectangle_lines_ex(self.rect, 2, DARKGRAY)
+		draw_text(self.text, self.rect.x + 5, self.rect.y + 5, 20, SKYBLUE)
 
 class CheckBox:
 	def __init__(self, posX, posY, width, height):
@@ -100,7 +100,7 @@ class VerticalScroller:
 		if (ratioTableWidthToViewerWidth > 1):
 			verticalScrollHeight = viewerHeight * (2 - ratioTableWidthToViewerWidth)
 		else:
-			return 
+			return
 
 		scollerWidthPix = 15
 		scrollerRect = Rectangle(viewerWidth - scollerWidthPix, self.topScollerEdge, scollerWidthPix, verticalScrollHeight)
@@ -242,30 +242,31 @@ class DropDown:
 		
 
 class InputBox:
-	def __init__(self, posX, posY, width, height):
-		self.button = Rectangle(posX, posY, width, height)
+	def __init__(self, posX, posY, width, height, maxChars):
+		self.rect = Rectangle(posX, posY, width, height)
 		self.drawAsClicked = False
 		self.inputText = ""
-		self.charsLeft = 21
+		self.charsLeft = maxChars
+		self.maxCharacters = maxChars
 
 	def isClicked(self):
-		if (check_collision_point_rec(get_mouse_position(), self.button)):
+		if (check_collision_point_rec(get_mouse_position(), self.rect)):
 			if (is_mouse_button_pressed(MOUSE_LEFT_BUTTON)):
 				return True
 		else:
 			return False
 
 	def draw(self):
-		draw_rectangle_rec(self.button, RAYWHITE)
+		draw_rectangle_rec(self.rect, RAYWHITE)
 		if (self.drawAsClicked):
-			draw_rectangle_lines_ex(self.button, 2, RED)
+			draw_rectangle_lines_ex(self.rect, 2, RED)
 			# draw cursor pointer
-			cursorRect = Rectangle(self.button.x + 5 + measure_text(self.inputText, 20), self.button.y + self.button.height - 5, 15, 3)
+			cursorRect = Rectangle(self.rect.x + 5 + measure_text(self.inputText, 20), self.rect.y + self.rect.height - 5, 15, 3)
 			draw_rectangle_rec(cursorRect, DARKPURPLE)
 		else:
-			draw_rectangle_lines_ex(self.button, 2, DARKPURPLE)
+			draw_rectangle_lines_ex(self.rect, 2, DARKPURPLE)
 
-		draw_text(self.inputText, self.button.x + 5, self.button.y + 5, 20, SKYBLUE)
+		draw_text(self.inputText, self.rect.x + 5, self.rect.y + 5, 20, SKYBLUE)
 
 class Splitter:
 	def draw(posX, posY):

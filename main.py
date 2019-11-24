@@ -69,24 +69,28 @@ def main():
 	set_target_fps(60)
 
 	controlX = screen_width / 2 + 300
+	controlY = -200
 
-	authorInputBox = InputBox(controlX + 200, 60, 260, 30)
-	bookInputBox = InputBox(controlX + 200, 100, 260, 30)
-	searchBookAuthorButton = Button("Search", controlX + 20, 140, 85, 30, SKYBLUE)
-	storyInputBox = InputBox(controlX + 200, 240, 260, 30)		
-	searchStoryButton = Button("Search", controlX + 20, 280, 85, 30, SKYBLUE)
-	genreDropDown = DropDown(controlX + 200, 380, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
-	genrePickButton = Button("Search", controlX + 20, 420, 85, 30, SKYBLUE)
-	authorStorySearchInputBox = InputBox(controlX + 200, 520, 260, 30)
-	authorStorySearchButton = Button("Search", controlX + 20, 560, 85, 30, SKYBLUE)
+	authorInputBox = InputBox(controlX + 200, controlY + 60, 260, 30, 21)
+	bookInputBox = InputBox(controlX + 200, controlY + 100, 260, 30, 21)
+	searchBookAuthorButton = Button("Search", controlX + 20, controlY + 140, 85, 30, SKYBLUE)
+	storyInputBox = InputBox(controlX + 200, controlY + 240, 260, 30, 21)		
+	searchStoryButton = Button("Search", controlX + 20, controlY + 280, 85, 30, SKYBLUE)
+	genreDropDown = DropDown(controlX + 200, controlY + 380, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
+	genrePickButton = Button("Search", controlX + 20, controlY + 420, 85, 30, SKYBLUE)
+	authorStorySearchInputBox = InputBox(controlX + 200, controlY + 520, 260, 30, 21)
+	authorStorySearchButton = Button("Search", controlX + 20, controlY + 560, 85, 30, SKYBLUE)
 	
-	authorNovelCountInputBox = InputBox(controlX + 200, 660, 260, 30)
-	authorNovelCountDropDown = DropDown(controlX + 200, 700, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
-	authorNovelCountButton = Button("Count", controlX + 20, 740, 70, 30, SKYBLUE)
-	authorNovelCountInputCheckBox = CheckBox(controlX + 150, 660, 30, 30)
-	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, 700, 30, 30)
+	authorNovelCountInputBox = InputBox(controlX + 200, controlY + 660, 260, 30, 21)
+	authorNovelCountDropDown = DropDown(controlX + 200, controlY + 700, 260, 30, [ "Sci-Fi", "Detectives", "Adventures"])
+	authorNovelCountButton = Button("Count", controlX + 20, controlY + 740, 70, 30, SKYBLUE)
+	authorNovelCountInputCheckBox = CheckBox(controlX + 150, controlY + 660, 30, 30)
+	authorNovelCountDropDownCheckBox = CheckBox(controlX + 150, controlY + 700, 30, 30)
 
-	duplicatesButton = Button("Print", controlX + 300, 840, 60, 30, SKYBLUE)
+	duplicatesButton = Button("Print", controlX + 300, controlY + 840, 60, 30, SKYBLUE)
+
+	searchNovelByCommentInputBox = InputBox(controlX + 200, controlY + 960, 260, 30, 100)
+	searchNovelByCommentButton = Button("Search", controlX + 20, controlY + 1000, 85, 30, SKYBLUE)	
 
 	resultViewer = ResultViewer()
 
@@ -120,6 +124,11 @@ def main():
 			currentInputBox = authorNovelCountInputBox
 			currentInputBox.drawAsClicked = True
 
+		if (searchNovelByCommentInputBox.isClicked()):
+			currentInputBox.drawAsClicked = False
+			currentInputBox = searchNovelByCommentInputBox
+			currentInputBox.drawAsClicked = True
+
 		if (currentInputBox.drawAsClicked):
 			key = get_key_pressed()
 			if (key >= 32 and key <= 125):
@@ -128,7 +137,7 @@ def main():
 					currentInputBox.charsLeft -= 1
 			elif (is_key_pressed(KEY_BACKSPACE)):
 				currentInputBox.inputText = currentInputBox.inputText[:-1]
-				if (currentInputBox.charsLeft <= 21):
+				if (currentInputBox.charsLeft <= currentInputBox.maxCharacters):
 					currentInputBox.charsLeft += 1
 		# =====================================
 
@@ -148,14 +157,14 @@ def main():
 
 		# ======================================
 		# Book search by author or name controls
-		BackgroundBox.draw(controlX, 45, screen_width, 135, GRAY)
-		draw_text("Find book by author or name", controlX + 20, 10, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 45, screen_width, 135, GRAY)
+		draw_text("Find book by author or name", controlX + 20, controlY + 10, 30, DARKGRAY)
 
-		Splitter.draw(controlX, 45)
-		draw_text("Author", controlX + 20, 60, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 45)
+		draw_text("Author", controlX + 20, controlY + 60, 30, DARKGRAY)
 		authorInputBox.draw()
 
-		draw_text("Book name", controlX + 20, 100, 30, DARKGRAY)
+		draw_text("Book name", controlX + 20, controlY + 100, 30, DARKGRAY)
 		bookInputBox.draw()
 
 		searchBookAuthorButton.draw()
@@ -178,16 +187,16 @@ def main():
 				resultViewer.header = ["Book name", "Author name", "Publication Date", "Publication Place", "Price"]
 				resultViewer.results = cur.fetchall()
 
-		Splitter.draw(controlX, 180)
+		Splitter.draw(controlX, controlY + 180)
 		#=======================================
 
 
 		#=======================================
 		# Search story by name
-		BackgroundBox.draw(controlX, 225, screen_width, 99, GRAY)
-		draw_text("Find novel by name", controlX + 20, 190, 30, DARKGRAY)				
-		Splitter.draw(controlX, 225)
-		draw_text("Story name", controlX + 20, 240, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 225, screen_width, 99, GRAY)
+		draw_text("Find novel by name", controlX + 20, controlY + 190, 30, DARKGRAY)				
+		Splitter.draw(controlX, controlY + 225)
+		draw_text("Story name", controlX + 20, controlY + 240, 30, DARKGRAY)
 		storyInputBox.draw()
 
 		searchStoryButton.draw()
@@ -196,15 +205,15 @@ def main():
 			cur.execute(""" SELECT story_name, book_name, author_name, genre, comment FROM books NATURAL JOIN stories where stories.story_name = ?""", (storyInputBox.inputText, ))
 			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Comment"]
 			resultViewer.results = cur.fetchall()
-		Splitter.draw(controlX, 320)
+		Splitter.draw(controlX, controlY + 320)
 		#=======================================
 		
 		#=======================================
 		# Search author's stories
-		BackgroundBox.draw(controlX, 505, screen_width, 95, GRAY)
-		draw_text("Search author's novels", controlX + 20, 470, 30, DARKGRAY)
-		Splitter.draw(controlX, 505)
-		draw_text("Author", controlX + 20, 520, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 505, screen_width, 95, GRAY)
+		draw_text("Search author's novels", controlX + 20, controlY + 470, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 505)
+		draw_text("Author", controlX + 20, controlY + 520, 30, DARKGRAY)
 		authorStorySearchInputBox.draw()
 		authorStorySearchButton.draw()
 		if (authorStorySearchButton.isClicked()):
@@ -213,16 +222,16 @@ def main():
 			resultViewer.header = ["Story name", "Book name", "Author name", "Genre", "Price", "Comment"]
 			resultViewer.results = cur.fetchall()
 
-		Splitter.draw(controlX, 600)
+		Splitter.draw(controlX, controlY + 600)
 		#=======================================
 
 		#=======================================
 		# Print books by a genre
-		BackgroundBox.draw(controlX, 365, screen_width, 99, GRAY)
-		Splitter.draw(controlX, 460)
-		draw_text("Print books by a genre", controlX + 20, 330, 30, DARKGRAY)
-		Splitter.draw(controlX, 365)
-		draw_text("Pick genre", controlX + 20, 380, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 365, screen_width, 99, GRAY)
+		Splitter.draw(controlX, controlY + 460)
+		draw_text("Print books by a genre", controlX + 20, controlY + 330, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 365)
+		draw_text("Pick genre", controlX + 20, controlY + 380, 30, DARKGRAY)
 		genreDropDown.draw()
 		genrePickButton.draw()
 		if (genrePickButton.isClicked()):
@@ -234,11 +243,11 @@ def main():
 
 		#=======================================
 		# Output duplicates
-		BackgroundBox.draw(controlX, 820, screen_width, 100, GRAY)
-		draw_text("Duplicates Info", controlX + 20, 790, 30, DARKGRAY)
-		Splitter.draw(controlX, 820)
+		BackgroundBox.draw(controlX, controlY + 820, screen_width, 70, GRAY)
+		draw_text("Duplicates Info", controlX + 20, controlY + 790, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 820)
 		duplicatesButton.draw()	
-		draw_text("Print duplicates", controlX + 20, 840, 30, DARKGRAY)
+		draw_text("Print duplicates", controlX + 20, controlY + 840, 30, DARKGRAY)
 		if (duplicatesButton.isClicked()):
 			cur = connection.cursor()
 			cur.execute(""" SELECT book_name, author_name, pub_date, pub_plc, story_name, genre, price, comment FROM books
@@ -250,13 +259,13 @@ def main():
 
 		#=======================================
 		# Count stories by author or genre
-		BackgroundBox.draw(controlX, 645, screen_width, 135, GRAY)
-		draw_text("Count novels", controlX + 20, 610, 30, DARKGRAY)
-		Splitter.draw(controlX, 645)
-		Splitter.draw(controlX, 780)
-		draw_text("Author", controlX + 20, 660, 30, DARKGRAY)
+		BackgroundBox.draw(controlX, controlY + 645, screen_width, 135, GRAY)
+		draw_text("Count novels", controlX + 20, controlY + 610, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 645)
+		Splitter.draw(controlX, controlY + 780)
+		draw_text("Author", controlX + 20, controlY + 660, 30, DARKGRAY)
 		authorNovelCountInputBox.draw()
-		draw_text("Genre", controlX + 20, 700, 30, DARKGRAY)
+		draw_text("Genre", controlX + 20, controlY + 700, 30, DARKGRAY)
 		authorNovelCountDropDown.draw()
 		authorNovelCountButton.draw()
 		authorNovelCountInputCheckBox.draw()
@@ -276,6 +285,25 @@ def main():
 
 			resultViewer.results = cur.fetchall()
 		#=======================================
+
+		#=======================================
+		# Search novels by comment
+		BackgroundBox.draw(controlX, controlY + 940, screen_width, 110, GRAY)
+		Splitter.draw(controlX, controlY + 890)
+		draw_text("Search a novel by a comment", controlX + 20, controlY + 900, 30, DARKGRAY)
+		Splitter.draw(controlX, controlY + 940)
+		draw_text("Comment", controlX + 20, controlY + 960, 30, DARKGRAY)
+		searchNovelByCommentInputBox.draw()
+		searchNovelByCommentButton.draw()
+		if (searchNovelByCommentButton.isClicked()):
+			cur = connection.cursor()
+			cur.execute(""" SELECT book_name, story_name, author_name, genre, price, comment FROM books NATURAL JOIN stories WHERE stories.comment = ? """, (searchNovelByCommentInputBox.inputText,))
+			resultViewer.header = ["Book name", "Story name", "Author name", "Genre", "Price", "Comment"]
+			resultViewer.results = cur.fetchall()
+		Splitter.draw(controlX, controlY + 1050)
+		#=======================================
+
+
 
 		end_drawing()
 
